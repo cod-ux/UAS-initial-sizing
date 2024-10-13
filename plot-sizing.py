@@ -59,23 +59,27 @@ for filename in os.listdir(folder_path):
 
         # Find parameters and their values
         for param_name in parameter_names:
-            param_row = df[
-                (
-                    df.iloc[:, 0].apply(lambda x: isinstance(x, str))
-                    & (df.iloc[:, 0].str.strip() == param_name)
-                    | df.iloc[:, 3].apply(lambda x: isinstance(x, str))
-                    & (df.iloc[:, 3].str.strip() == param_name)
-                    | df.iloc[:, 7].apply(lambda x: isinstance(x, str))
-                    & (df.iloc[:, 7].str.strip() == param_name)
-                )
-            ]
-            if not param_row.empty:
-                param_value = param_row.iloc[0, 1]
-                parameter_list[param_name][person_name] = param_value
-            else:
-                parameter_list[param_name][person_name] = np.nan
+            matching_row = None
+            matching_column = None
 
-print(parameter_list)
+        # Check each of the specified columns (0, 3, and 7) for a match
+            for col in [0, 3, 7]:
+                # Find the matching row in the current column
+                param_row = df[
+                    df.iloc[:, col].apply(lambda x: isinstance(x, str)) & (df.iloc[:, col].str.strip() == param_name)
+                ]
+
+                if not param_row.empty:
+                    matching_row = param_row.index[0]  # Assumed that there is only one row with that parameter name.
+                    matching_column = col  
+
+                    param_value = df.iloc[matching_row, matching_column + 1] # param value is available in the adjacent column of param name
+                    parameter_list[param_name][person_name] = param_value
+
+                    break
+                    
+                else:
+                    parameter_list[param_name][person_name] = np.nan
 
 
 def create_chart(param_data, param_name):
