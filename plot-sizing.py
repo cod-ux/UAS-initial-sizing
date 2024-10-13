@@ -2,10 +2,14 @@ import os
 import pandas as pd
 import streamlit as st
 import matplotlib.pyplot as plt
+import plotly.express as px
 import numpy as np
 
 # Source of excel files
 folder_path = "/Users/suryaganesan/Documents/GitHub/UAS-initial-sizing/source"
+
+# Streamlit Page Setup
+st.set_page_config(layout="wide")
 
 # List of parameter names in the file
 parameter_names = [
@@ -65,39 +69,50 @@ for filename in os.listdir(folder_path):
 
 print(parameter_list)
 
-st.title("UAS Sizing Graphs")
 
-# Calculate the number of rows and columns for subplots
-num_plots = len(parameter_list)
-cols = 3
-rows = (num_plots - 1) // cols + 1
+def create_chart(param_data, param_name):
+    df = pd.DataFrame(list(param_data.items()), columns=["person_name", "param_value"])
+    fig = px.line(
+        df,
+        x="person_name",
+        y="param_value",
+        title=f"{param_name} Chart",
+        #        text="person_name",
+        labels=False,
+        markers=True,
+    )
+    fig.update_xaxes(showticklabels=False)
+    fig.update_layout(xaxis_title="Person Name", yaxis_title=param_name)
+    fig.update_traces(
+        hoverinfo="text",
+        textposition="bottom center",
+        text=person_name,
+        marker=dict(symbol="hourglass", size=8),
+    )
 
-fig, axes = plt.subplots(rows, cols, figsize=(8, 2.2 * rows))
-plt.subplots_adjust(hspace=2, wspace=2)
-axes = axes.flatten()
+    return fig
 
-for index, (parameter_name, person_values) in enumerate(parameter_list.items()):
 
-    if index < len(axes):
-        ax = axes[index]
+# Streamlit Title
+st.title("Parameter Charts")
 
-        # Graph for each parameter on the list
-        people = list(person_values.keys())
-        values = list(person_values.values())
+# Create a 2x2 grid for the charts
+col1, col2 = st.columns(2)
+col3, col4 = st.columns(2)
 
-        x = np.arange(len(people))
+# List of columns for easy iteration
+columns = [col1, col2, col3, col4]
 
-        ax.bar(people, values, width=0.6)
-        ax.set_xlabel("People", fontsize=6)
-        ax.set_ylabel("Value", fontsize=6)
-        ax.set_title(f"{parameter_name}", fontsize=8)
-        ax.set_xticks(x)
-        ax.set_xticklabels(people, rotation=45, ha="right", fontsize=6)
-        ax.tick_params(axis="y", labelsize=8)
+# Create four charts with individual dropdowns
+for i, column in enumerate(columns):
+    with column:
+        # Dropdown to select a parameter for this chart
+        selected_param = st.selectbox(
+            f"Select parameter for Chart {i+1}",
+            list(parameter_list.keys()),
+            key=f"dropdown_{i}",
+        )
 
-# Remove any unused subplots
-for i in range(index + 1, len(axes)):
-    fig.delaxes(axes[i])
-
-plt.tight_layout()
-st.pyplot(fig)
+        # Display the selected parameter chart
+        chart = create_chart(parameter_list[selected_param], selected_param)
+        st.plotly_chart(chart, use_container_width=True, key=f"chart_{i}")
