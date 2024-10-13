@@ -1,7 +1,6 @@
 import os
 import pandas as pd
 import streamlit as st
-import matplotlib.pyplot as plt
 import plotly.express as px
 import numpy as np
 
@@ -28,7 +27,7 @@ parameter_names = [
     "Battery Voltage",
     "Battery Capacity",
     "Battery Espec",
-    "BatteryMF - Cruise",
+    "BatteryMF - Cruise ",
     "BatteryMF- Loiter",
     "Compound Efficiency",
     "Usable Proportion Factor",
@@ -60,7 +59,16 @@ for filename in os.listdir(folder_path):
 
         # Find parameters and their values
         for param_name in parameter_names:
-            param_row = df[df.iloc[:, 0] == param_name]
+            param_row = df[
+                (
+                    df.iloc[:, 0].apply(lambda x: isinstance(x, str))
+                    & (df.iloc[:, 0].str.strip() == param_name)
+                    | df.iloc[:, 3].apply(lambda x: isinstance(x, str))
+                    & (df.iloc[:, 3].str.strip() == param_name)
+                    | df.iloc[:, 7].apply(lambda x: isinstance(x, str))
+                    & (df.iloc[:, 7].str.strip() == param_name)
+                )
+            ]
             if not param_row.empty:
                 param_value = param_row.iloc[0, 1]
                 parameter_list[param_name][person_name] = param_value
